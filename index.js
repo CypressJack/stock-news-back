@@ -1,6 +1,7 @@
 require("dotenv").config();
 const news = require("./amazon-news");
 const sentiment = require("./amazon-sentiment");
+const request = require("request");
 const cors = require("cors");
 const express = require("express");
 const app = express();
@@ -9,22 +10,21 @@ const port = 3005;
 app.use(cors());
 
 app.get("/:stock/news", (req, res) => {
-  const newsData = news.data;
-  const newsJSON = JSON.stringify(news);
-  let negSentiment = 0;
-  let posSentiment = 0;
-  res.send(newsJSON);
-  for (story of newsData) {
-    const sentiment = story.sentiment;
-    if (sentiment === "Positive") {
-      posSentiment++;
-    }
-    if (sentiment === "Negative") {
-      negSentiment++;
-    }
+  console.log(req.params);
+  if (req.params["stock"] === "AMZN") {
+    const newsData = news.data;
+    const newsJSON = JSON.stringify(news);
+    res.send(newsJSON);
+    return;
   }
-  console.log("Negative Sentiment", negSentiment);
-  console.log("Positive Sentiment", posSentiment);
+  request(
+    `https://stocknewsapi.com/api/v1?tickers=${req.params.stock}&items=50&token=${process.env.API_KEY}`,
+    function (error, response, body) {
+      if (!error && response.statusCode == 200) {
+        res.send(body); // Print the body of response.
+      }
+    }
+  );
 });
 
 app.get("/:stock/sentiment", (req, res) => {
